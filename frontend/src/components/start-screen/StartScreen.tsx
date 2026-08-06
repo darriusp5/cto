@@ -1,58 +1,47 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FileText, Loader2, RefreshCw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { fetchProjects } from '@/lib/auth';
 import { formatDateTime } from '@/lib/format';
+import { toast } from '@/lib/toast';
 import { useAuthStore } from '@/stores/authStore';
 import { useProjectStore } from '@/stores/projectStore';
 import { CreateProjectDialog } from './CreateProjectDialog';
 
 /**
- * Стартовое окно (раздел 4.2): «Создать новую диаграмму»,
- * «Открыть существующую» (.kul, заглушка) и «Последние проекты».
+ * Стартовое окно (раздел 4.2): «Создать новую диаграмму» (в т.ч. по шаблону),
+ * «Открыть существующую» (.kul с диска) и «Последние проекты».
  */
 export function StartScreen(): React.JSX.Element {
   const user = useAuthStore((state) => state.user);
   const projects = useProjectStore((state) => state.projects);
   const loading = useProjectStore((state) => state.loading);
   const error = useProjectStore((state) => state.error);
-  const setProjects = useProjectStore((state) => state.setProjects);
-  const setLoading = useProjectStore((state) => state.setLoading);
-  const setError = useProjectStore((state) => state.setError);
+  const loadProjects = useProjectStore((state) => state.loadProjects);
   const openProject = useProjectStore((state) => state.openProject);
+  const importKul = useProjectStore((state) => state.importKul);
+  const setError = useProjectStore((state) => state.setError);
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [kulNotice, setKulNotice] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const loadProjects = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const list = await fetchProjects();
-      // Сортировка по updatedAt (убывание) — см. раздел 4.2.2
-      const sorted = [...list].sort(
-        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-      );
-      setProjects(sorted);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить проекты');
-    } finally {
-      setLoading(false);
-    }
-  }, [setLoading, setError, setProjects]);
 
   useEffect(() => {
     void loadProjects();
   }, [loadProjects]);
 
-  const handleKulPick = (file: File | undefined): void => {
-    setKulNotice(
-      file
-        ? `Файл «${file.name}» выбран. Формат .kul подключается на этапе 5.`
-        : null,
-    );
+  const handleKulPick = async (file: File | undefined): Promise<void> => {
+    if (!file) return;
+    setImporting(true);
+    setError(null);
+    try {
+      await importKul(file);
+      toast('Проект импортирован', 'success');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось импортировать .kul');
+    } finally {
+      setImporting(false);
+    }
   };
 
   return (
@@ -64,7 +53,6 @@ export function StartScreen(): React.JSX.Element {
         </p>
       </div>
 
-      {/* Карточки действий */}
       <div className="grid gap-5 sm:grid-cols-2">
         <button
           type="button"
@@ -78,23 +66,24 @@ export function StartScreen(): React.JSX.Element {
             СОЗДАТЬ НОВУЮ ДИАГРАММУ
           </span>
           <span className="mt-2 block text-sm leading-relaxed text-slate-400">
-            Начать новый проект с нуля или по шаблону
+            Новый проект с нуля или по шаблону из библиотеки
           </span>
         </button>
 
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="group rounded-2xl border border-white/10 bg-white/5 p-8 text-left transition hover:border-violet-400/40 hover:bg-white/10"
+          disabled={importing}
+          className="group rounded-2xl border border-white/10 bg-white/5 p-8 text-left transition hover:border-violet-400/40 hover:bg-white/10 disabled:opacity-50"
         >
           <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-2xl shadow-lg shadow-indigo-500/25 transition group-hover:scale-105">
-            📂
+            {importing ? <Loader2 className="h-6 w-6 animate-spin" /> : '📂'}
           </span>
           <span className="mt-4 block text-base font-semibold text-white">
             ОТКРЫТЬ СУЩЕСТВУЮЩУЮ
           </span>
           <span className="mt-2 block text-sm leading-relaxed text-slate-400">
-            Открыть файл .kul с компьютера
+            Импорт файла .kul с компьютера (раздел 4.2.2)
           </span>
         </button>
       </div>
@@ -105,18 +94,11 @@ export function StartScreen(): React.JSX.Element {
         accept=".kul,.json"
         className="hidden"
         onChange={(e) => {
-          handleKulPick(e.target.files?.[0]);
+          void handleKulPick(e.target.files?.[0]);
           e.target.value = '';
         }}
       />
 
-      {kulNotice && (
-        <div className="mt-4 rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">
-          {kulNotice}
-        </div>
-      )}
-
-      {/* Последние проекты */}
       <div className="mt-10">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-300">
           📂 Последние проекты

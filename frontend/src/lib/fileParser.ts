@@ -1,20 +1,21 @@
-import type { Project } from '@/types';
+import { parseKul } from '@/lib/kul';
+import type { KulDocument } from '@/types';
 
 /**
- * Парсер файлов проекта (.kul) (каркас, этап 1).
- * Реализация формата — на этапе 2.
+ * Парсер файлов проекта (.kul) — раздел 4.2.2 («Открыть существующую»).
  */
 
-export interface ParsedKulFile {
-  project: Project;
-}
-
-export function parseKulFile(_file: File): Promise<ParsedKulFile> {
-  // TODO(этап 2): разбор .kul (JSON-структура проекта)
-  return Promise.reject(new Error('Формат .kul будет реализован на этапе 2'));
-}
-
-export function serializeKulFile(_project: Project): string {
-  // TODO(этап 2): сериализация проекта в .kul
-  return JSON.stringify({ version: 1, project: null });
+export function parseKulFile(file: File): Promise<KulDocument> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Не удалось прочитать файл'));
+    reader.onload = () => {
+      try {
+        resolve(parseKul(String(reader.result)));
+      } catch (e) {
+        reject(e instanceof Error ? e : new Error('Некорректный .kul файл'));
+      }
+    };
+    reader.readAsText(file);
+  });
 }
