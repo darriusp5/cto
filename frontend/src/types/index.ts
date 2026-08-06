@@ -1,23 +1,40 @@
 /**
- * Базовые типы предметной области (каркас).
- * Полные типы для всех сущностей — на этапе 2.
+ * Типы предметной области (этап 3).
+ * Согласованы с ответами backend API (см. backend/src/routes).
  */
 
+export type Role = 'user' | 'admin' | 'dev';
+
+/** Пользователь — ответ GET /api/users/me и POST /api/auth/verify. */
 export interface User {
   id: string;
   phone: string;
   name: string | null;
-  isAdmin: boolean;
-  isBanned: boolean;
+  role: Role;
+  banned: boolean;
 }
 
+/** Проект — ответ /api/projects (поле data — строка JSON, Prisma String). */
 export interface Project {
   id: string;
-  name: string;
-  ownerId: string;
-  data: Record<string, unknown> | null;
+  userId: string;
+  title: string;
+  data: string;
+  thumbnail: string | null;
+  lastOpened: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Шаблон — ответ GET /api/templates. */
+export interface Template {
+  id: string;
+  name: string;
+  category: string | null;
+  thumbnail: string | null;
+  data: string;
+  isDefault: boolean;
+  createdAt: string;
 }
 
 /** Узел библиотеки компонентов (категория или компонент). */
@@ -28,8 +45,6 @@ export interface LibraryNode {
   isFavorite: boolean;
   children?: LibraryNode[];
 }
-
-export type Role = 'user' | 'admin' | 'dev';
 
 export interface AuthSession {
   user: User | null;

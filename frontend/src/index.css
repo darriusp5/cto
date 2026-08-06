@@ -27,6 +27,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
@@ -58,5 +59,12 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
       Arial, sans-serif;
     font-feature-settings: 'rlig' 1, 'calt' 1;
+    /* Мягкий градиент поверх тёмного фона (стиль ekl.by) */
+    background-image: radial-gradient(
+      ellipse 80% 50% at 50% -20%,
+      hsl(217 91% 60% / 0.14),
+      transparent
+    );
+    background-attachment: fixed;
   }
 }

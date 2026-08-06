@@ -1,32 +1,46 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-import { clearSession, getStoredSession, persistSession } from '@/lib/auth';
+import { logoutRequest } from '@/lib/auth';
 import type { User } from '@/types';
 
 /**
- * Стор авторизации (каркас, этап 1).
- * Полная логика (телефон + SMS, админ-вход) — на этапе 2.
+ * Стор авторизации (этап 3).
+ * JWT и пользователь хранятся в localStorage (zustand persist, ключ ekl.auth),
+ * сессия восстанавливается при перезагрузке страницы.
  */
 interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  setSession: (user: User | null, token: string | null) => void;
-  logout: () => void;
+  /** Установить сессию после успешного POST /api/auth/verify. */
+  setSession: (token: string, user: User) => void;
+  /** Обновить данные пользователя (после PUT /api/users/me). */
+  setUser: (user: User) => void;
+  /** Выйти: POST /api/auth/logout (best effort) + очистка хранилища. */
+  logout: () => Promise<void>;
 }
 
-const initial = getStoredSession();
-
-export const useAuthStore = create<AuthState>((set) => ({
-  user: initial.user,
-  token: initial.token,
-  isAuthenticated: Boolean(initial.token && initial.user),
-  setSession: (user, token) => {
-    persistSession({ user, token });
-    set({ user, token, isAuthenticated: Boolean(token && user) });
-  },
-  logout: () => {
-    clearSession();
-    set({ user: null, token: null, isAuthenticated: false });
-  },
-}));
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      setSession: (token, user) => set({ token, user, isAuthenticated: true }),
+      setUser: (user) => set({ user }),
+      logout: async () => {
+        await logoutRequest();
+        set({ token: null, user: null, isAuthenticated: false });
+      },
+    }),
+    {
+      name: 'ekl.auth',
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    },
+  ),
+);

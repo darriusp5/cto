@@ -3,32 +3,38 @@ import { create } from 'zustand';
 import type { Project } from '@/types';
 
 /**
- * Стор проектов (каркас, этап 1).
- * Загрузка/создание/сохранение проектов — на этапе 2.
+ * Стор проектов (этап 3).
+ * Список последних проектов + текущий открытый проект (переход в редактор).
  */
 interface ProjectState {
   projects: Project[];
   currentProject: Project | null;
+  loading: boolean;
+  error: string | null;
   setProjects: (projects: Project[]) => void;
-  setCurrentProject: (project: Project | null) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  /** Открыть проект (клик по карточке/после создания) → редактор. */
+  openProject: (project: Project) => void;
+  /** Закрыть редактор и вернуться на стартовое окно. */
+  closeEditor: () => void;
+  /** Добавить только что созданный проект. */
   addProject: (project: Project) => void;
-  removeProject: (projectId: string) => void;
 }
 
 export const useProjectStore = create<ProjectState>((set) => ({
   projects: [],
   currentProject: null,
+  loading: false,
+  error: null,
   setProjects: (projects) => set({ projects }),
-  setCurrentProject: (currentProject) => set({ currentProject }),
+  setLoading: (loading) => set({ loading }),
+  setError: (error) => set({ error }),
+  openProject: (currentProject) => set({ currentProject }),
+  closeEditor: () => set({ currentProject: null }),
   addProject: (project) =>
     set((state) => ({
       projects: [project, ...state.projects.filter((p) => p.id !== project.id)],
       currentProject: project,
-    })),
-  removeProject: (projectId) =>
-    set((state) => ({
-      projects: state.projects.filter((p) => p.id !== projectId),
-      currentProject:
-        state.currentProject?.id === projectId ? null : state.currentProject,
     })),
 }));

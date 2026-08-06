@@ -1,33 +1,29 @@
 import { AuthScreen } from '@/components/auth/AuthScreen';
+import { EditorScreen } from '@/components/editor/EditorScreen';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { StartScreen } from '@/components/start-screen/StartScreen';
 import { useAuthStore } from '@/stores/authStore';
-import { cn } from '@/lib/utils';
-import { APP_NAME } from '@/lib/constants';
+import { useProjectStore } from '@/stores/projectStore';
 
 /**
- * Корневой компонент приложения (каркас, этап 1).
- * Маршрутизация между экранами — на этапе 2.
+ * Корневой компонент (этап 3).
+ * Не авторизован → экран входа. Авторизован → верхняя панель + стартовое окно,
+ * при открытом проекте — редактор (заглушка до этапа 4).
  */
 function AppShell(): React.JSX.Element {
-  const user = useAuthStore((state) => state.user);
+  const currentProject = useProjectStore((state) => state.currentProject);
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between border-b bg-card px-4 py-2">
-        <span className="font-semibold">📱 {APP_NAME}</span>
-        <span className={cn('text-sm text-muted-foreground')}>
-          {user ? user.phone : 'не авторизован'}
-        </span>
-      </header>
+      <AppHeader />
       <main className="flex flex-1 flex-col">
-        <StartScreen />
+        {currentProject ? <EditorScreen /> : <StartScreen />}
       </main>
     </div>
   );
 }
 
 export default function App(): React.JSX.Element {
-  // Каркас: показываем стартовый экран, авторизация — этап 2.
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   return isAuthenticated ? <AppShell /> : <AuthScreen />;
 }

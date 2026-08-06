@@ -16,8 +16,9 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // Dev-прокси: запросы к API уходят на локальный backend
-      '/api': 'http://localhost:3000',
+      // Dev-прокси: запросы к API уходят на локальный backend.
+      // Цель читается из env: VITE_API_TARGET=http://localhost:4000 npm run dev
+      '/api': process.env.VITE_API_TARGET ?? 'http://localhost:3000',
     },
   },
   build: {

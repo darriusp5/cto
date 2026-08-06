@@ -32,9 +32,17 @@ export const projectNameSchema = z
   .min(PROJECT_NAME_MIN_LENGTH, `Минимум ${PROJECT_NAME_MIN_LENGTH} символа`)
   .max(PROJECT_NAME_MAX_LENGTH, `Максимум ${PROJECT_NAME_MAX_LENGTH} символов`);
 
+/** Имя пользователя — 1–100 символов (ограничение backend, PUT /api/users/me). */
+export const userNameSchema = z
+  .string()
+  .trim()
+  .min(1, 'Введите имя')
+  .max(100, 'Максимум 100 символов');
+
 export type PhoneInput = z.infer<typeof phoneSchema>;
 export type SmsCodeInput = z.infer<typeof smsCodeSchema>;
 export type ProjectNameInput = z.infer<typeof projectNameSchema>;
+export type UserNameInput = z.infer<typeof userNameSchema>;
 
 /** Хелпер для префикса кода страны в поле телефона. */
 export function withCountryPrefix(phone: string): string {
