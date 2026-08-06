@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  frontend:
+    name: Frontend (build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+
+      - name: Build (tsc + vite)
+        working-directory: frontend
+        env:
+          CI: "false"
+        run: npm run build
+
+  backend:
+    name: Backend (prisma + typecheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install
+        working-directory: backend
+        run: npm ci --no-audit --no-fund
+
+      - name: Prisma validate + generate
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://ekl:ekl@localhost:5432/ekl
+        run: npx prisma validate && npx prisma generate
+
+      - name: Typecheck
+        working-directory: backend
+        run: npm run typecheck

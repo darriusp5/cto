@@ -1,0 +1,30 @@
+# Зависимости
+node_modules/
+
+# Сборка
+dist/
+build/
+.vite/
+
+# Окружение
+.env
+.env.*
+!.env.example
+
+# Базы данных (SQLite — dev)
+*.db
+*.db-journal
+
+# Загруженные файлы
+uploads/*
+!uploads/.gitkeep
+
+# Логи и ОС
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ekl
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ekl
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://ekl:${DB_PASSWORD}@postgres:5432/ekl
+      JWT_SECRET: ${JWT_SECRET}
+      SMS_API_KEY: ${SMS_API_KEY}
+      ALLOW_DEV_LOGIN: ${ALLOW_DEV_LOGIN}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend/uploads:/app/uploads
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
