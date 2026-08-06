@@ -1,34 +1,136 @@
-// ekl.by — Prisma schema (этап 1: каркас).
-// Полные модели для всех сущностей — на этапе 2.
-
 generator client {
-  provider = "prisma-client-js"
+ provider = "prisma-client-js"
 }
-
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+ provider = "sqlite"
+ url = env("DATABASE_URL")
 }
-
 model User {
-  id        String    @id @default(cuid())
-  phone     String    @unique
-  name      String?
-  isAdmin   Boolean   @default(false)
-  isBanned  Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  projects  Project[]
+
+ id String @id @default(cuid())
+
+ phone String @unique
+
+ name String?
+
+ role String @default("user")
+
+ banned Boolean @default(false)
+
+ banReason String?
+
+ createdAt DateTime @default(now())
+
+ lastActive DateTime @default(now())
+
+ projects Project[]
+
+ favorites UserFavorite[]
+
+ admin Admin?
+
+ tokens AuthToken[]
+
+ audits AdminAudit[]
 }
-
+model AuthToken {
+ id String @id @default(cuid())
+ userId String
+ token String
+ expiresAt DateTime
+ createdAt DateTime @default(now())
+ user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+ @@index([token])
+}
+model SmsCode {
+ id String @id @default(cuid())
+ phone String
+ code String
+ expiresAt DateTime
+ attempts Int @default(0)
+ blockedUntil DateTime?
+ sentAt DateTime @default(now())
+ @@index([phone])
+}
 model Project {
-  id        String   @id @default(cuid())
-  name      String
-  data      Json?
-  ownerId   String
-  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([ownerId])
+ id String @id @default(cuid())
+ userId String
+ title String
+ data String
+ thumbnail String?
+ lastOpened DateTime?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+ @@index([userId])
+}
+model Brand {
+ id String @id @default(cuid())
+ name String
+ logoUrl String?
+ website String?
+ active Boolean @default(true)
+ createdAt DateTime @default(now())
+ components Component[]
+}
+model Category {
+ id String @id @default(cuid())
+ name String
+ parentId String?
+ sortOrder Int @default(0)
+ createdAt DateTime @default(now())
+ parent Category? @relation("CategoryTree", fields:[parentId], references:[id])
+ children Category[] @relation("CategoryTree")
+ components Component[]
+}
+model Component {
+ id String @id @default(cuid())
+ name String
+ article String?
+ brandId String?
+ categoryId String?
+ type String?
+ imageUrl String?
+ terminals String
+ params String?
+ active Boolean @default(true)
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ brand Brand? @relation(fields:[brandId], references:[id])
+ category Category? @relation(fields:[categoryId], references:[id])
+ favorites UserFavorite[]
+}
+model Template {
+ id String @id @default(cuid())
+ name String
+ category String?
+ thumbnail String?
+ data String
+ isDefault Boolean @default(false)
+ createdAt DateTime @default(now())
+}
+model UserFavorite {
+ userId String
+ componentId String
+ sortOrder Int @default(0)
+ createdAt DateTime @default(now())
+ user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+ component Component @relation(fields:[componentId], references:[id], onDelete:Cascade)
+ @@id([userId,componentId])
+}
+model Admin {
+ id String @id
+ email String @unique
+ passwordHash String
+ createdAt DateTime @default(now())
+ user User @relation(fields:[id], references:[id], onDelete:Cascade)
+}
+model AdminAudit {
+ id String @id @default(cuid())
+ adminId String
+ action String
+ details String?
+ ip String?
+ createdAt DateTime @default(now())
+ admin User @relation(fields:[adminId], references:[id])
 }

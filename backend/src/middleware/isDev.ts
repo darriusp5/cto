@@ -1,6 +1,2 @@
 import type { RequestHandler } from 'express';
-
-// TODO(этап 2): доступ только для роли Dev (см. раздел 4.1.2 спецификации)
-export const requireDev: RequestHandler = (_req, _res, next) => {
-  next();
-};
+export const requireDev: RequestHandler = (_req,res,next) => { if(process.env.ALLOW_DEV_LOGIN !== 'true' || process.env.NODE_ENV === 'production'){res.status(403).json({error:'Dev-режим отключён'});return;} next(); };

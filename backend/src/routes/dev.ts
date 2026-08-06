@@ -1,6 +1,1 @@
-import { Router } from 'express';
-
-// /api/admin/dev — dev-инструменты, только для роли Dev (этап 2, раздел 4.1.2)
-const router = Router();
-
-export default router;
+import{Router}from'express';import{prisma}from'../lib/prisma';import{requireDev}from'../middleware/isDev';import{signToken}from'../lib/jwt';const r=Router();r.use(requireDev);r.get('/admins',async(_req,res)=>res.json(await prisma.user.findMany({where:{role:'admin'},select:{id:true,phone:true,name:true,role:true}})));r.get('/users',async(_req,res)=>res.json(await prisma.user.findMany({where:{role:'user'},select:{id:true,phone:true,name:true,role:true}})));r.post('/login-admin',async(req,res)=>{const u=await prisma.user.findUnique({where:{id:req.body?.userId}});if(!u||u.role!=='admin'){res.status(404).json({error:'Администратор не найден'});return;}res.json({token:signToken({sub:u.id,phone:u.phone,role:'admin'}),user:u})});r.post('/login-editor',async(req,res)=>{const u=await prisma.user.findUnique({where:{id:req.body?.userId}});if(!u||u.banned){res.status(403).json({error:'Пользователь недоступен'});return;}res.json({token:signToken({sub:u.id,phone:u.phone,role:'user'}),user:u})});export default r;

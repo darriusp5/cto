@@ -1,6 +1,1 @@
-import { Router } from 'express';
-
-// /api/templates — шаблоны чертежей (этап 2, раздел 4.2.1)
-const router = Router();
-
-export default router;
+import{Router}from'express';import{prisma}from'../lib/prisma';const r=Router();r.get('/',async(_req,res)=>res.json(await prisma.template.findMany({orderBy:{createdAt:'desc'}})));export default r;

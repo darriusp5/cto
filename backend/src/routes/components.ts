@@ -1,6 +1,1 @@
-import { Router } from 'express';
-
-// /api/components — библиотека компонентов (этап 2, раздел 4.6)
-const router = Router();
-
-export default router;
+import {Router}from'express';import{prisma}from'../lib/prisma';import{requireAuth}from'../middleware/auth';import type{AuthRequest}from'../types';const r=Router();r.use(requireAuth);r.get('/search',async(req,res)=>{const q=typeof req.query.q==='string'?req.query.q:'';res.json(await prisma.component.findMany({where:{active:true,OR:[{name:{contains:q}},{article:{contains:q}},{type:{contains:q}}]},include:{brand:true,category:true},take:50}))});r.get('/',async(req,res)=>res.json(await prisma.component.findMany({where:{active:true,brandId:typeof req.query.brandId==='string'?req.query.brandId:undefined,categoryId:typeof req.query.categoryId==='string'?req.query.categoryId:undefined},include:{brand:true,category:true}})));r.get('/:id',async(req,res)=>{const c=await prisma.component.findUnique({where:{id:req.params.id},include:{brand:true,category:true}});c?res.json(c):res.status(404).json({error:'Компонент не найден'})});r.post('/:id/favorite',async(req,res)=>{const userId=(req as AuthRequest).user!.sub;await prisma.userFavorite.upsert({where:{userId_componentId:{userId,componentId:req.params.id}},create:{userId,componentId:req.params.id},update:{}});res.json({favorite:true})});r.delete('/:id/favorite',async(req,res)=>{await prisma.userFavorite.deleteMany({where:{userId:(req as AuthRequest).user!.sub,componentId:req.params.id}});res.status(204).send()});export default r;
