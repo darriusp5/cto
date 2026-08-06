@@ -1,5 +1,5 @@
 # Зависимости
-node_modules/
+node_modules
 
 # Сборка
 dist/
@@ -28,3 +28,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# Кэш TypeScript-сборки
+*.tsbuildinfo
