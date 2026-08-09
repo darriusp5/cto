@@ -1,21 +1,5 @@
-/**
- * Левая панель библиотеки (поиск, дерево, избранное) (каркас, этап 1).
- * Реализация — этап 2 (раздел 4.3 спецификации).
- */
-export function LibraryPanel(): React.JSX.Element {
-  return (
-    <aside className="flex h-full w-64 flex-col border-r bg-card">
-      <div className="border-b p-3">
-        <input
-          type="search"
-          placeholder="Поиск…"
-          disabled
-          className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
-        />
-      </div>
-      <div className="flex flex-1 flex-col items-center justify-center p-4 text-sm text-muted-foreground">
-        Библиотека компонентов — этап 2
-      </div>
-    </aside>
-  );
-}
+import { useEffect, useMemo, useState } from 'react';
+import { apiFetch } from '@/lib/auth';
+import type { Component } from '@/types';
+import { useEditorStore } from '@/stores/editorStore';
+export function LibraryPanel(): React.JSX.Element { const [items,setItems]=useState<Component[]>([]); const [query,setQuery]=useState(''); const [tab,setTab]=useState<'catalog'|'fav'>('catalog'); const add=useEditorStore(s=>s.add); useEffect(()=>{apiFetch<Component[]>('/api/components').then(setItems).catch(()=>setItems([]));},[]); const filtered=useMemo(()=>items.filter(c=>`${c.name} ${c.article??''} ${c.brand?.name??''} ${c.category?.name??''}`.toLowerCase().includes(query.toLowerCase())),[items,query]); const addComponent=(c:Component)=>{let terminals:Array<{id:string;name:string;side:string;pos:number}> = []; try { terminals=JSON.parse(c.terminals) as typeof terminals; } catch {} add({id:`el-${Date.now()}`,componentId:c.id,label:c.name,x:120,y:90,width:150,height:90,rotation:0,terminals,params:c.params?JSON.parse(c.params) as Record<string,string|number>:{}});}; return <aside className="flex h-full w-72 flex-col border-r border-slate-200 bg-white"><div className="border-b p-3"><div className="mb-2 text-xs font-bold tracking-widest text-slate-500">LIBRARY</div><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Поиск компонентов..." className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-blue-500"/><div className="mt-3 flex gap-1"><button onClick={()=>setTab('catalog')} className={`flex-1 rounded px-2 py-1 text-xs ${tab==='catalog'?'bg-blue-600 text-white':'bg-slate-100'}`}>Каталог</button><button onClick={()=>setTab('fav')} className={`flex-1 rounded px-2 py-1 text-xs ${tab==='fav'?'bg-blue-600 text-white':'bg-slate-100'}`}>★ Избранное</button></div></div><div className="flex-1 overflow-auto p-3"><div className="mb-2 text-xs text-slate-400">Результатов: {filtered.length}</div>{filtered.map(c=><button key={c.id} draggable onDragEnd={()=>addComponent(c)} onClick={()=>addComponent(c)} className="mb-2 w-full rounded-xl border border-slate-200 p-3 text-left shadow-sm transition hover:border-blue-400 hover:shadow-md"><div className="text-sm font-semibold text-slate-800">▣ {c.name}</div><div className="mt-1 text-xs text-slate-500">{c.brand?.name ?? '—'} · {c.article ?? 'без артикула'}</div><div className="mt-1 text-[11px] text-blue-600">{c.category?.name ?? 'Компонент'} · добавить на холст</div></button>)}</div></aside>; }
