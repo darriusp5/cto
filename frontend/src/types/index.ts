@@ -211,9 +211,54 @@ export interface LibraryNode {
 }
 
 export interface Component { id: string; name: string; article: string | null; type: string | null; terminals: string; params: string | null; brand?: { name: string } | null; category?: { id: string; name: string } | null; }
-export interface DiagramElement { id: string; componentId: string; label: string; x: number; y: number; width: number; height: number; rotation: number; terminals: Array<{id:string;name:string;side:string;pos:number}>; params: Record<string, string | number>; }
-export interface DiagramLink { id:string; source:string; target:string; }
-export interface DiagramData { format:string; grid:number; elements:DiagramElement[]; links:DiagramLink[]; settings?: {showGrid?:boolean;snapToGrid?:boolean}; }
+
+/** Терминал элемента на холсте (позиция в % от стороны). */
+export interface ElementTerminal { id: string; name: string; side: string; pos: number; }
+
+/** Элемент (компонент) на холсте. */
+export interface DiagramElement {
+  id: string;
+  componentId: string;
+  label: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  terminals: ElementTerminal[];
+  params: Record<string, string | number>;
+  layerId?: string;
+  groupId?: string;
+}
+
+/** Провод между клеммами двух элементов (раздел 4.9). */
+export interface DiagramLink {
+  id: string;
+  source: string;
+  sourcePort: string;
+  target: string;
+  targetPort: string;
+  vertices?: { x: number; y: number }[];
+  layerId?: string;
+  style?: {
+    stroke?: string;
+    strokeWidth?: number;
+    lineType?: 'solid' | 'dashed' | 'dashdot' | 'dotdot';
+  };
+}
+
+/** Группа элементов (раздел 4.12). */
+export interface DiagramGroup { id: string; name: string; elementIds: string[]; }
+
+export interface DiagramData {
+  format: string;
+  grid: number;
+  elements: DiagramElement[];
+  links: DiagramLink[];
+  layers?: Layer[];
+  groups?: DiagramGroup[];
+  settings?: { showGrid?: boolean; snapToGrid?: boolean };
+}
 
 export interface AuthSession {
   user: User | null;
