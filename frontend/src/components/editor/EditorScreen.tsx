@@ -58,7 +58,7 @@ function isTypingTarget(e: Event): boolean {
 export function EditorScreen(): React.JSX.Element {
   const project = useProjectStore((s) => s.currentProject);
   const close = useProjectStore((s) => s.closeEditor);
-  const { data, setData, dirty, markClean, grid, toggleGrid, setZoom, zoom } = useEditorStore();
+  const { data, setData, dirty, grid, toggleGrid, setZoom, zoom } = useEditorStore();
   const [helpOpen, setHelpOpen] = useState(false);
   const toasts = useToastStore((s) => s.toasts);
 
@@ -75,12 +75,16 @@ export function EditorScreen(): React.JSX.Element {
 
   const save = async (): Promise<void> => {
     if (!project) return;
+    // Читаем данные прямо из стора в момент сохранения — обработчик Ctrl+S
+    // регистрируется в эффекте с deps [project] и иначе держит устаревший closure
+    // с пустой data из первого рендера (баг: Ctrl+S затирал схему пустыми данными).
+    const { data, grid, markClean: markCleanNow } = useEditorStore.getState();
     const saved = await apiFetch<typeof project>(`/api/projects/${project.id}`, {
       method: 'PUT',
       body: JSON.stringify({ title: project.title, data: JSON.stringify({ ...data, settings: { ...data.settings, showGrid: grid } }) }),
     });
     useProjectStore.getState().openProject(saved);
-    markClean();
+    markCleanNow();
   };
 
   // ── горячие клавиши ─────────────────────────────────────────────────
